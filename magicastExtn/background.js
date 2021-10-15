@@ -3,10 +3,11 @@ let color = "#3aa757";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({ color });
+  // openTab()
   console.log("Default background color set to %cgreen", `color: ${color}`);
 });
 
-async function openTab(link) {
+ function openTab(link) {
   if (!link) {
     link =
       "https://www.youtube.com/watch?v=59Q_lhgGANc&list=RD59Q_lhgGANc&start_radio=1";
@@ -16,84 +17,64 @@ async function openTab(link) {
   });
   return tab;
 }
-class SocketManager {
-  constructor() {
-    this.socket = {};
-  }
-  init() {
-    try {
-      let resetCall = this.reset.bind(this);
-      this.socket = new WebSocket("ws://localhost:8080/ws");
-
-      this.socket.onopen = function (e) {
-        console.log("[open] Connection established");
-        console.log("Sending to server");
-        //   this.socket.send("My name is John");
-      };
-
-      this.socket.onmessage = function (event) {
-        console.log(`[message] Data received from server: ${event.data}`);
-        let message = event.data;
-        if (message == "open") {
-          // debugger;
-          fetch("http://localhost:8080/link", {
-            method: "GET",
-            mode: "cors",
-          })
-            .then((response) => response.text())
-            .then((resp) => {
-              console.log("resp is ", resp);
-
-              openTab(resp);
-            });
-          // openTab();
-        } else if (message == "close") {
-          chrome.tabs.query({ active: true }, function (tabs) {
-            chrome.tabs.remove(tabs[0].id);
-          });
-        }
-      };
-
-      this.socket.onclose = function (event) {
-        if (event.wasClean) {
-          console.log(
-            `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
-          );
-        } else {
-          // e.g. server process killed or network down
-          // event.code is usually 1006 in this case
-          console.log("[close] Connection died");
-        }
-        resetCall();
-      };
-
-      this.socket.onerror = function (error) {
-        console.log(`[error] ${error.message}`);
-      };
-    } catch (err) {
-      setTimeout(() => {
-        this.reset();
-      }, 1000);
-    }
-  }
-
-  async reset() {
-    // debugger;
-    this.socket.onopen = function (e) {};
-
-    this.socket.onmessage = function (event) {};
-
-    this.socket.onclose = function (event) {};
-
-    this.socket.onerror = function (error) {};
-
-    this.init();
-  }
-
-  start() {
-    this.init();
-  }
+ function closeTab() {
+  chrome.tabs.query({ active: true }, function (tabs) {
+    chrome.tabs.remove(tabs[0].id);
+  });
 }
+// chrome.runtime.onMessage.addListener(
+//   (request, sender, resp) => {
+//     alert("hello")
+//     console.log("request is ", request)
+//     let { task, link } = request;
+//     switch (task) {
+//       case "open":
+//         openTab(link);
+//         break;
+//       case "close":
+//         closeTab();
+//         break;
+//     }
+//     setTimeout(()=>{
+//       resp("completed")
+//     },10000)
+//     return true
 
-let socketManager = new SocketManager();
-socketManager.start();
+  
+// });
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    try{
+    console.log(sender.tab ?
+                "from a content script:" + sender.tab.url :
+                "from the extension");
+    switch (request.task) {
+      case "open":
+        openTab(request.link);
+        break;
+      case "close":
+        closeTab();
+        break;
+    }         
+    if (request.greeting === "hello")
+      sendResponse({farewell: "goodbye"});
+  }catch(err){
+    sendResponse({farewell:"error"+err})
+  }
+  }
+);
+
+// chrome.runtime.onStartup.addListener(()=>{
+//   console.log("started")
+//   openTab()
+// })
+
+// chrome.runtime.reload.addListener(()=>{
+//   console.log("started")
+//   openTab()
+// })
+
+/*
+
+*/

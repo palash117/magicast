@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -42,15 +43,21 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func reader(conn *websocket.Conn) {
+	fmt.Println("connected")
+	ticker := time.NewTicker(10 * time.Second)
 	for {
-		// read in a message
-		message := <-wsChan
-		// print out that message for clarity
-		fmt.Println(string(message))
-
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			log.Println(err)
+		select {
+		case <-ticker.C:
+			fmt.Println("closing websocket")
+			conn.Close()
 			return
+		case message := <-wsChan:
+			fmt.Println(string(message))
+
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 	}
@@ -60,6 +67,7 @@ func setupRoutes() {
 	http.HandleFunc("/cast", cast)
 	http.HandleFunc("/ws", wsEndpoint)
 	http.HandleFunc("/link", fetchLink)
+	http.HandleFunc("/ip", getIp)
 }
 
 func main() {
@@ -68,6 +76,10 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
+}
+
+func getIp(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "192.168.1.10")
 }
 
 func cast(w http.ResponseWriter, r *http.Request) {
