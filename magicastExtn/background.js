@@ -4,7 +4,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   // chrome.storage.sync.set({ color });/
   // openTab()
-  console.log("Default background color set to %cgreen", `color: ${color}`);
+  // console.log("Default background color set to %cgreen", `color: ${color}`);
 });
 
  function openTab(link) {
