@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	wsChan = make(chan string)
-	link   = ""
+	wsChan              = make(chan string)
+	link                = ""
+	EMPTY_WS_REQUEST, _ = json.Marshal(&WsRequest{Task: "empty"})
 )
 
 var upgrader = websocket.Upgrader{
@@ -26,6 +27,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 func fetchLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=ascii")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
 	w.Write([]byte(link))
 }
@@ -58,6 +60,7 @@ func reader(conn *websocket.Conn) {
 				log.Println(err)
 				return
 			}
+			conn.WriteMessage(websocket.TextMessage, EMPTY_WS_REQUEST)
 		}
 
 	}
@@ -86,16 +89,28 @@ func cast(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var t CastRequest
 	err := decoder.Decode(&t)
+
+	wsReq := &WsRequest{
+		Task: t.Cast,
+	}
 	if err != nil {
 		panic(err)
 	}
 	if t.Cast == "open" {
 		link = t.Link
+		wsReq.Link = t.Link
 	}
-	wsChan <- t.Cast
+
+	jsonData, _ := json.Marshal(wsReq)
+	wsChan <- string(jsonData)
 }
 
 type CastRequest struct {
 	Link string `json:"link"`
 	Cast string `json:"cast"`
+}
+
+type WsRequest struct {
+	Task string `json:"task"`
+	Link string `json:"link"`
 }

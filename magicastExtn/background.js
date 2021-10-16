@@ -1,8 +1,8 @@
 // background.js
-let color = "#3aa757";
+// let color = "#3aa757";
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ color });
+  // chrome.storage.sync.set({ color });/
   // openTab()
   console.log("Default background color set to %cgreen", `color: ${color}`);
 });
@@ -52,9 +52,13 @@ chrome.runtime.onMessage.addListener(
     switch (request.task) {
       case "open":
         openTab(request.link);
+        pressKeyDown()
         break;
       case "close":
         closeTab();
+        break;
+      case "play":
+        pressKeyDown()
         break;
     }         
     if (request.greeting === "hello")
@@ -78,3 +82,23 @@ chrome.runtime.onMessage.addListener(
 /*
 
 */
+
+
+function pressKeyDown(){
+  var keyboardEvent = document.createEvent('KeyboardEvent');
+var initMethod = typeof keyboardEvent.initKeyboardEvent !== 'undefined' ? 'initKeyboardEvent' : 'initKeyEvent';
+
+keyboardEvent[initMethod](
+  'keydown', // event type: keydown, keyup, keypress
+  true, // bubbles
+  true, // cancelable
+  window, // view: should be window
+  false, // ctrlKey
+  false, // altKey
+  false, // shiftKey
+  false, // metaKey
+  32, // keyCode: unsigned long - the virtual key code, else 0
+  0, // charCode: unsigned long - the Unicode character associated with the depressed key, else 0
+);
+document.dispatchEvent(keyboardEvent);
+}

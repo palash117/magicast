@@ -15,6 +15,12 @@ function openTab(link){
     });
     console.log("opening tab")
 }
+function play(){
+    chrome.runtime.sendMessage({greeting: "hello",task:"play"}, function(response) {
+      console.log(response.farewell);
+    });
+    console.log("opening tab")
+}
 class SocketManager {
     constructor() {
       this.socket = {};
@@ -32,25 +38,37 @@ class SocketManager {
   
         this.socket.onmessage = function (event) {
           console.log(`[message] Data received from server: ${event.data}`);
-          let message = event.data;
-          if (message == "open") {
-            // debugger;
-            fetch("http://localhost:8080/link", {
-              method: "GET",
-              mode: "cors",
-            })
-              .then((response) => response.text())
-              .then((resp) => {
-                console.log("resp is ", resp);
-  
-                openTab(resp);
-              });
+          debugger
+          let message = JSON.parse( event.data);
+          if (message.task == "open") {
+            debugger;
+            // fetch("http://localhost:8080/link"
+            // , {
+            //   method: "GET",
+            //   mode: "cors",
+            // }
+            // )
+            //   .then((response) => response.text())
+            //   .then((resp) => {
+            //     console.log("resp is ", resp);
+                
+            //     openTab(resp);
+            //   }).catch(err=>{
+            //     debugger
+            //     console.log("error")
+            //     console.error(err)
+            //   })
+              
+            openTab(message.link)
+              
             // openTab();
-          } else if (message == "close") {
+          } else if (message.task == "close") {
             // chrome.tabs.query({ active: true }, function (tabs) {
             //   chrome.tabs.remove(tabs[0].id);
             // });
             closeTab()
+          }else if (message.task =="play"){
+
           }
         };
   
